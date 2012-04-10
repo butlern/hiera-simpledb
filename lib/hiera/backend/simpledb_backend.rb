@@ -1,5 +1,5 @@
 # Class Simpledb_backend
-# Description: AWS SimpleDB back end to Hiera.
+# Description: AWS SimpleDB backend to Hiera.
 # Author: Nathan Butler <nathan.butler@newsweekdailybeast.com>
 # 
 class Hiera
@@ -37,46 +37,39 @@ class Hiera
           begin
             results = @sdb.domains[source].items[key].data.attributes
           rescue AWS::SimpleDB::Errors::NoSuchDomain
-            Hiera.debug("Cannot find domain #{source}, skipping")
+            Hiera.warn("Cannot find domain #{source}, skipping")
             next
           end
 
-          Hiera.debug("Results  => #{results.inspect}")
-
+          next if ! results
           next if results.empty?
+
+          Hiera.debug("Found Results: #{results.inspect}")
 
           # for array resolution we just append to the array whatever
           # we find, we then go onto the next file and keep adding to
           # the array
           #
           # for priority searches we break after the first found data item
+          new_answer = Backend.parse_answer(results, scope)
           case resolution_type
             when :array
-              results.each do |ritem|
-                answer << Backend.parse_answer(ritem, scope)
-              end
+              answer << new_answer
+            when :hash
+              answer = new_answer.merge answer
             else
-              answer = Backend.parse_answer(results, scope)
+              answer = new_answer
               break
           end
         end
-        Hiera.debug("Answer   => #{answer.inspect}")
+        # The hiera backend.rb library breaks if the answer is true
+        # and empty [] or {} return true, which prevents additional
+        # backends from running. We don't want to prevent this so we
+        # return nil instead so additional lesser priority backends
+        # can run. The reason this works for :priority is that 
+        # Backend.empty_answer(:priority) returns nil already
+        answer = nil if answer == Backend.empty_answer(resolution_type)
         return answer
-      end
-
-      def domains(scope, override=nil, domains=nil)
-        if domains 
-          domains = [domains]
-        elsif Config[:simpledb].include?(:domains)
-          domains = [Config[:simpledb][:domains]].flatten
-        else
-          domains = ["hiera"]
-        end
-
-        domains.flatten.map do |source|
-          source = Backend.parse_string(source, scope)
-          yield(source) unless source == ""
-        end
       end
     end
   end
