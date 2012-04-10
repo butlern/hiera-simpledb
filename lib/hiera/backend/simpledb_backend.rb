@@ -13,14 +13,9 @@ class Hiera
           require 'aws-sdk'
         end
 
-        config = Hash.new
-        config['access_key_id'] = Config[:simpledb][:access_key_id]
-        config['secret_access_key'] = Config[:simpledb][:secret_access_key]
-
-        AWS.config(config)
-        @sdb = AWS::SimpleDB.new
+        @sdb = AWS::SimpleDB.new(Config[:simpledb])
         
-        Hiera.debug("SimpleDB_backend initialized")
+        Hiera.debug("Hiera SimpleDB backend initialized")
       end
 
       def lookup(key, scope, order_override, resolution_type)
