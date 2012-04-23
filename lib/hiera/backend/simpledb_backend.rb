@@ -46,7 +46,7 @@ class Hiera
           # the array
           #
           # for priority searches we break after the first found data item
-          new_answer = Backend.parse_answer(results, scope)
+          new_answer = type_conv(Backend.parse_answer(results, scope))
           case resolution_type
             when :array
               answer << new_answer
@@ -66,6 +66,22 @@ class Hiera
         answer = nil if answer == Backend.empty_answer(resolution_type)
         return answer
       end
+
+      # The simpledb aws-sdk returns attribute values as an array
+      # of values even if there is only one value. This normalizes the 
+      # data type to a string if their are less than 2 array values.
+      def type_conv(results)
+        new_results = Hash.new
+        results.each do |k,v|
+          if v.size < 2
+            new_results[k] = v.to_s
+          else
+            new_results[k] = v
+          end
+        end
+        return new_results
+      end
+
     end
   end
 end
