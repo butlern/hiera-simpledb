@@ -1,9 +1,10 @@
 require 'rubygems'
 require 'rake/gempackagetask'
+require 'rspec/core/rake_task'
 
 spec = Gem::Specification.new do |gem|
     gem.name = "hiera-simpledb"
-    gem.version = "0.0.1"
+    gem.version = "0.0.2"
     gem.summary = "Simpledb backend for Hiera"
     gem.email = "nathan.butler@newsweekdailybeast.com"
     gem.author = "Nathan Butler"
